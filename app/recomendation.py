@@ -4,6 +4,12 @@ from math import sqrt
 from music_rates import music_rates
 import codecs
 
+
+users2 = {"Amy": {"Taylor Swift": 4, "PSY": 3, "Whitney Houston": 4},
+		  "Ben": {"Taylor Swift": 5, "PSY": 2},
+          "Clara": {"PSY": 3.5, "Whitney Houston": 4},
+          "Daisy": {"Taylor Swift": 5, "Whitney Houston": 3}}
+
 class Recomender:
 
 	def __init__(self, data, k=1, metric='pearson', n=5):
@@ -14,6 +20,10 @@ class Recomender:
 		self.username2id = {}
 		self.userid2name = {}
 		self.productid2name = {}
+
+		self.frequencies = {}
+		self.deviations = {}
+
 		
 
 		if self.metric == 'pearson':
@@ -303,6 +313,26 @@ class Recomender:
  		# Return the first n items 		 
  		return recomendations[:self.n]
 
+	def computeDeviations(self):
+		deviations = {}
+		for ratings in self.data.values():
+			for (item, rating) in ratings.items():
+				self.frequencies.setdefault(item,{})
+				self.deviations.setdefault(item,{})
+				for (item2, rating2) in ratings.items():
+					if item != item2:
+						self.frequencies[item].setdefault(item2,0)
+						self.deviations[item].setdefault(item2, 0.0)
+						self.frequencies[item][item2] += 1
+						self.deviations[item][item2] += rating - rating2
+
+		for (item, ratings) in self.deviations.items():
+			for item2 in ratings:
+				ratings[item2] /= self.frequencies[item][item2]
+
+
+
+
 '''
 2. The book website has a file containing movie
 ratings for 25 movies. Create a function that loads
@@ -326,24 +356,32 @@ def recomend_teste():
 	print r.recommend('Bill')
 	#r.loadBookBD()
 	#r.recommend('171118') 
+
 	#r.userRatings('171118', 5) 
 
+def teste():
+	r = Recomender(music_rates)
+	#print r.recommend('Angelica')
+	#print r.recommend('Chan')
+	#print r.recommend('Veronica')
+	#print r.recommend('Bill')
+
+	r.loadMovieBD()
+
+	print r.recommend('Bryan')
+	print r.recommend('vanessa')
+	print r.recommend('Patrick C')
+	print ''
+
+	print r.data['Patrick C']
 #==========================================================
 
-r = Recomender(music_rates)
-#print r.recommend('Angelica')
-#print r.recommend('Chan')
-#print r.recommend('Veronica')
-#print r.recommend('Bill')
 
-r.loadMovieBD()
+r = Recomender(users2)
 
-print r.recommend('Bryan')
-print r.recommend('vanessa')
-print r.recommend('Patrick C')
-print ''
-
-print r.data['Patrick C']
+r.computeDeviations()
+for dev in r.deviations:
+	print dev, r.deviations[dev]
 
 
 
