@@ -70,6 +70,13 @@ def deviation(artist1,artist2):
 		return dev/ N
 
 
+def compute_deviations(self):
+	deviations = {}
+	for ratings in self.data.values():
+		for (item, rating) in ratings.items():
+			self.frequency.setdefault(item,{})
+			self.deviations.setdefault(item,{})
+	
 
 
 

@@ -10,7 +10,7 @@ users2 = {"Amy": {"Taylor Swift": 4, "PSY": 3, "Whitney Houston": 4},
           "Clara": {"PSY": 3.5, "Whitney Houston": 4},
           "Daisy": {"Taylor Swift": 5, "Whitney Houston": 3}}
 
-class Recomender:
+class Recommender:
 
 	def __init__(self, data, k=1, metric='pearson', n=5):
 		
@@ -32,7 +32,8 @@ class Recomender:
 		if type(data).__name__ == 'dict':
 			self.data = data
 
-	def convertProductID2Name(self, id):
+	def convertProductID2name(self, id):
+		"""Given product id number return product name"""
 		if id in self.productid2name:
 			return self.productid2name[id]
 		else:
@@ -330,6 +331,34 @@ class Recomender:
 			for item2 in ratings:
 				ratings[item2] /= self.frequencies[item][item2]
 
+		return deviations
+
+	def slopeOneRecommendations(self, userRatings):
+		recommendations = {}
+		frequencies = {}
+		# for every item and rating in the user's recommendations
+		for (userItem, userRating) in userRatings.items():
+		 # for every item in our dataset that the user didn't rate
+		 for (diffItem, diffRatings) in self.deviations.items():
+		    if diffItem not in userRatings and \
+		       userItem in self.deviations[diffItem]:
+		       freq = self.frequencies[diffItem][userItem]
+		       recommendations.setdefault(diffItem, 0.0)
+		       frequencies.setdefault(diffItem, 0)
+		       # add to the running sum representing the numerator
+		       # of the formula
+		       recommendations[diffItem] += (diffRatings[userItem] +
+		                                     userRating) * freq
+		       # keep a running sum of the frequency of diffitem
+		       frequencies[diffItem] += freq
+		recommendations =  [(self.convertProductID2name(k),
+		                   v / frequencies[k])
+		                  for (k, v) in recommendations.items()]
+		# finally sort and return
+		recommendations.sort(key=lambda artistTuple: artistTuple[1],
+		                   reverse = True)
+		# I am only going to return the first 50 recommendations
+		return recommendations[:50]
 
 
 
@@ -377,11 +406,10 @@ def teste():
 #==========================================================
 
 
-r = Recomender(users2)
-
+r = Recommender(users2)
 r.computeDeviations()
-for dev in r.deviations:
-	print dev, r.deviations[dev]
+g = users2['Ben']
+print r.slopeOneRecommendations(g)
 
 
 
