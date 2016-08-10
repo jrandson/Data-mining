@@ -23,133 +23,149 @@ from math import sqrt
 
 from numpy import array
 
-def euclidian(rate1, rate2):
-   distcance = 0
-   for mood in rate1:
-      distcance += (rate2[mood] - rate1[mood])**2
+class Classifier():
 
-   return sqrt(distcance)
+   def __init__(self):
+      pass
 
-def manhattam(rate1, rate2):
-   distcance = 0
-   for mood in rate1:
-      distcance += abs(rate2[mood] - rate1[mood])
+   def euclidian(self,rate1, rate2):
+      distcance = 0
+      for mood in rate1:
+         distcance += (rate2[mood] - rate1[mood])**2
 
-   return distcance
+      return sqrt(distcance)
 
-def computeNearestNeighbor(music,musics):
-   distances = []
-   for item in musics:
-      if item != music:
-         d = manhattam(musics[item],musics[music])
-         distances.append((item,d))
+   def manhattam(self,rate1, rate2):
+      distcance = 0
+      for mood in rate1:
+         distcance += abs(rate2[mood] - rate1[mood])
 
-   distances.sort(key=lambda musicTuple: musicTuple[1], reverse=False)
+      return distcance
 
-   return distances
+   def computeNearestNeighbor(self,music,musics):
+      distances = []
+      for item in musics:
+         if item != music:
+            d = manhattam(musics[item],musics[music])
+            distances.append((item,d))
 
-def standardScore(musics):
-   new_musics = {}  
+      distances.sort(key=lambda musicTuple: musicTuple[1], reverse=False)
 
-   dim = {}
-   for item in musics:
-      for item2 in musics[item]:
-         if item2 in dim:
-            dim[item2].append(musics[item][item2])
-         else:
-            dim[item2] = []         
+      return distances
 
-   for item in musics:
-      new_item = {}
-      for aspect in musics[item]:
-         maximum = max(dim[aspect])
-         minimum = min(dim[aspect])
-         norm_value = (musics[item][aspect] - minimum)/float(maximum-minimum)
-         new_item.setdefault(aspect,norm_value)
+   def standardScore(self,musics):
+      new_musics = {}  
 
-      new_musics.setdefault(item,new_item)
+      dim = {}
+      for item in musics:
+         for item2 in musics[item]:
+            if item2 in dim:
+               dim[item2].append(musics[item][item2])
+            else:
+               dim[item2] = []         
 
-   return new_musics
+      for item in musics:
+         new_item = {}
+         for aspect in musics[item]:
+            maximum = max(dim[aspect])
+            minimum = min(dim[aspect])
+            norm_value = (musics[item][aspect] - minimum)/float(maximum-minimum)
+            new_item.setdefault(aspect,norm_value)
 
-def disctionary_to_vector(musics):
-   music_list = {}
-   for item in musics:
-      music_list[item] = []
-      for item2 in musics[item]:
-         music_list[item].append(musics[item][item2])
+         new_musics.setdefault(item,new_item)
 
-   return music_list
+      return new_musics
+
+   def disctionary_to_vector(self,musics):
+      music_list = {}
+      for item in musics:
+         music_list[item] = []
+         for item2 in musics[item]:
+            music_list[item].append(musics[item][item2])
+
+      return music_list
+
+   def modifiedStardScore(self,musics):
+      new_musics = {}
+      
+      dim = {}
+      for item in musics:
+         for item2 in musics[item]:
+            if item2 in dim:
+               dim[item2].append(musics[item][item2])
+            else:
+               dim[item2] = []         
+
+      for item in musics:
+         new_item = {}
+         for aspect in musics[item]:
+
+            median = getMedian(dim[aspect])
+            asd = absoluteStardDeviation(dim[aspect]);         
+            socore = (musics[item][aspect] - median)/float(asd)
+            
+            new_item.setdefault(aspect,norm_value)
+
+         new_musics.setdefault(item,new_item)
+
+      return new_musics
+
+   def getMedian(self,values):     
+
+      if len(values) == 0:
+         return 0
+
+      if len(values) == 1:
+         return values[0]
+
+      values.sort()
+
+      i = len(values)/2
+      if len(values) % 2 == 0:      
+         return (values[i-1] + values[i])*0.5
+      else:
+         return values[i]
+
+   def asd(self,values):
+      soma = 0
+      median = self.getMedian(values)
+      for item in values:
+         soma += abs(item - median)
+
+      return soma/float(len(values))
+
+   def teste_recommending(self):
+      normalize(musics)
+      print ''
+
+      recommendings = computeNearestNeighbor('Phoenix/Lisztomania', musics)
+
+      for item in recommendings:
+         print item
+
+   def test_modifiedScore(self, s):  
+
+      for i in s:
+         asd = absoluteStandardDeviation(s)
+         median = getMedian(s)
+         score = (i - median)/float(asd)
+         print score
 
 
 
-def modifiedStardScore(musics):
-   new_musics = {}
-   
-   dim = {}
-   for item in musics:
-      for item2 in musics[item]:
-         if item2 in dim:
-            dim[item2].append(musics[item][item2])
-         else:
-            dim[item2] = []         
+heights = [54, 72, 78, 49, 65, 63, 75, 67, 54]
 
-   for item in musics:
-      new_item = {}
-      for aspect in musics[item]:
+def unitTest():
+   classifer = Classifier()
+   m1 = classifer.getMedian(heights)
+   assert(round(m1,3) == 65)
 
-         median = getMedian(dim[aspect])
-         asd = absoluteStardDeviation(dim[aspect]);         
-         socore = (musics[item][aspect] - median)/float(asd)
-         
-         new_item.setdefault(aspect,norm_value)
+   print "getMedian and getAbsoluteStandardDeviation work correctly"
 
-      new_musics.setdefault(item,new_item)
+unitTest()
 
-   return new_musics
-
-def getMedian(values):
-
-   if len(values) == 0:
-      return 0
-
-   if len(values) == 1:
-      return values[0]
-
-   i = len(values)/2
-   if len(values) % 2 == 0:      
-      return (values[i-1] + values[i])*0.5
-   else:
-      return values[i]
-
-def absoluteStandardDeviation(values):
-   soma = 0
-   median = getMedian(values)
-   for item in values:
-      soma += abs(item - median)
-
-   return soma/float(len(values))
-
-
-def teste_recommending():
-   normalize(musics)
-   print ''
-
-   recommendings = computeNearestNeighbor('Phoenix/Lisztomania', musics)
-
-   for item in recommendings:
-      print item
-
-def test_modifiedScore():
-   s = [21,15,12,3,7]
-
-   for i in s:
-      asd = absoluteStandardDeviation(s)
-      median = getMedian(s)
-      score = (i - median)/float(asd)
-      print score
-
-
-standardScore2(musics)
+classifier = Classifier()
+print classifier.asd(heights)
 
 
 
