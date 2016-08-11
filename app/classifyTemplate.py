@@ -89,17 +89,19 @@ class Classifier:
         """We have stored the median and asd for each column.
         We now use them to normalize vector v"""
         vector = list(v)
+        minimo = min(vector)
+        maximo = max(vector)
         for i in range(len(vector)):
             (median, asd) = self.medianAndDeviation[i]
             vector[i] = (vector[i] - median) / asd
+            #vector[i] = (vector[i] - minimo)/float(maximo - minimo)
+        
         return vector
 
     
     ###
     ### END NORMALIZATION
     ##################################################
-
-
 
     def manhattan(self, vector1, vector2):
         """Computes the Manhattan distance."""
@@ -108,8 +110,8 @@ class Classifier:
 
     def nearestNeighbor(self, itemVector):
         """return nearest neighbor to itemVector"""
-        
-        return ((0, ("REPLACE THIS LINE WITH CORRECT RETURN", [0], [])))
+        return min([(self.manhattan(itemVector, item[1]), item)
+                  for item in self.data])
     
     def classify(self, itemVector):
         """Return class we think item Vector is in"""
@@ -117,10 +119,11 @@ class Classifier:
  
 
 def unitTest():
-    classifier = Classifier('athletesTrainingSet.txt')
+    classifier = Classifier('../data_sources/ch4/athletesTrainingSet.txt')
     br = ('Basketball', [72, 162], ['Brittainey Raven'])
     nl = ('Gymnastics', [61, 76], ['Viktoria Komova'])
     cl = ("Basketball", [74, 190], ['Crystal Langhorne'])
+    
     # first check normalize function
     brNorm = classifier.normalizeVector(br[1])
     nlNorm = classifier.normalizeVector(nl[1])
@@ -128,11 +131,13 @@ def unitTest():
     assert(brNorm == classifier.data[1][1])
     assert(nlNorm == classifier.data[-1][1])
     print('normalizeVector fn OK')
+    
     # check distance
     assert (round(classifier.manhattan(clNorm, classifier.data[1][1]), 5) == 1.16823)
     assert(classifier.manhattan(brNorm, classifier.data[1][1]) == 0)
     assert(classifier.manhattan(nlNorm, classifier.data[-1][1]) == 0)
     print('Manhattan distance fn OK')
+    
     # Brittainey Raven's nearest neighbor should be herself
     result = classifier.nearestNeighbor(brNorm)
     assert(result[1][2]== br[2])
