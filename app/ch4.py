@@ -25,8 +25,34 @@ from numpy import array
 
 class Classifier():
 
-   def __init__(self):
-      pass
+   def __init__(self,filename):
+      self.medianAndDeviation = []
+        
+      # reading the data in from the file
+      f = open(filename)
+      lines = f.readlines()
+      f.close()
+      self.format = lines[0].strip().split('\t')
+      self.data = []
+      for line in lines[1:]:
+         fields = line.strip().split('\t')
+         ignore = []
+         vector = []
+         for i in range(len(fields)):
+            if self.format[i] == 'num':
+               vector.append(int(fields[i]))
+            elif self.format[i] == 'comment':
+               ignore.append(fields[i])
+            elif self.format[i] == 'class':
+              classification = fields[i]
+         self.data.append((classification, vector, ignore))
+      self.rawData = list(self.data)
+      # get length of instance vector
+      self.vlen = len(self.data[0][1])
+      # now normalize the data
+      for i in range(self.vlen):
+         self.normalizeColumn(i)
+   
 
    def euclidian(self,rate1, rate2):
       distcance = 0
@@ -134,6 +160,13 @@ class Classifier():
 
       return soma/float(len(values))
 
+   def medianAndDeviation(self):
+
+      median = self.getMedian(self.data[1][1])
+      deviation = self.asd(self.data[1][1])
+
+      return (median,deviation)
+
    def teste_recommending(self):
       normalize(musics)
       print ''
@@ -151,6 +184,59 @@ class Classifier():
          score = (i - median)/float(asd)
          print score
 
+   def loadData(self):
+      f = open('../data_sources/ch4/athletesTrainingSet.txt','r')
+      lines = f.readlines()
+      f.close()
+      data = []
+      for i in range(len(lines)):
+         if not i == 0:
+
+            line = lines[i].strip().split('\t')
+
+            values = [float(line[2]),float(line[3])]
+            name = line[0]
+            classe = line[1]
+
+            data.append((classe,values,name))
+      self.data = data
+
+      return data
+
+   def normalizeColumn(self,colum_Number):
+      col = [v[1][colum_Number] for v in self.data]
+
+      median = self.getMedian(col)
+      asd = self.asd(col)
+
+      for v in self.data:
+         v[1][colum_Number] = (v[1][colum_Number] - median)/asd
+
+   def normalizeVector(self, v):
+      """We have stored the median and asd for each column.
+      We now use them to normalize vector v"""
+      vector = list(v)
+      for i in range(len(vector)):
+         (median, asd) = self.medianAndDeviation[i]
+         vector[i] = (vector[i] - median) / asd
+      return vector
+        
+   def manhattan(self, vector1, vector2):
+      """Computes the Manhattan distance."""
+      return sum(map(lambda v1, v2: abs(v1 - v2), vector1, vector2))
+
+   def nearestNeighbor(self, itemVector):
+      """return nearest neighbor to itemVector"""
+
+      return min([(self.manhattan(itemVector, item[1]), item)
+                  for item in self.data])
+
+   def classify(self, itemVector):
+      """Return class we think item Vector is in"""
+      return (self.nearestNeighbor(self.normalizeVector(itemVector))[1][0])
+
+
+
 
 
 heights = [54, 72, 78, 49, 65, 63, 75, 67, 54]
@@ -162,10 +248,52 @@ def unitTest():
 
    print "getMedian and getAbsoluteStandardDeviation work correctly"
 
-unitTest()
+def teste3():
+   unitTest()
 
-classifier = Classifier()
-print classifier.asd(heights)
+   classifier = Classifier()
+
+   classifier.loadData()
+   classifier.normalize_data(1)
+
+   for line in classifier.data:
+      print line
+
+def unitTest():
+
+    classifier = Classifier('../data_sources/ch4/athletesTrainingSet.txt')
+    br = ('Basketball', [72, 162], ['Brittainey Raven'])
+    nl = ('Gymnastics', [61, 76], ['Viktoria Komova'])
+    cl = ("Basketball", [74, 190], ['Crystal Langhorne'])
+    # first check normalize function
+    brNorm = classifier.normalizeVector(br[1])
+    nlNorm = classifier.normalizeVector(nl[1])
+    clNorm = classifier.normalizeVector(cl[1])
+    assert(brNorm == classifier.data[1][1])
+    assert(nlNorm == classifier.data[-1][1])
+    print('normalizeVector fn OK')
+    # check distance
+    assert (round(classifier.manhattan(clNorm, classifier.data[1][1]), 5) == 1.16823)
+    assert(classifier.manhattan(brNorm, classifier.data[1][1]) == 0)
+    assert(classifier.manhattan(nlNorm, classifier.data[-1][1]) == 0)
+    print('Manhattan distance fn OK')
+    # Brittainey Raven's nearest neighbor should be herself
+    result = classifier.nearestNeighbor(brNorm)
+    assert(result[1][2]== br[2])
+    # Nastia Liukin's nearest neighbor should be herself
+    result = classifier.nearestNeighbor(nlNorm)
+    assert(result[1][2]== nl[2])
+    # Crystal Langhorne's nearest neighbor is Jennifer Lacy"
+    assert(classifier.nearestNeighbor(clNorm)[1][2][0] == "Jennifer Lacy")
+    print("Nearest Neighbor fn OK")
+    # Check if classify correctly identifies sports
+    assert(classifier.classify(br[1]) == 'Basketball')
+    assert(classifier.classify(cl[1]) == 'Basketball')
+    assert(classifier.classify(nl[1]) == 'Gymnastics')
+    print('Classify fn OK')
+
+unitTest()
+    
 
 
 
